@@ -1,0 +1,1128 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Minimal Tech UI Character Select Screen</title>
+
+  <!-- Google Fonts for Minimal Tech Graphics -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;700;900&family=Noto+Sans+KR:wght@400;700;900&family=Rajdhani:wght@600;700&display=swap" rel="stylesheet">
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+    }
+
+    :root {
+      --tech-bg: #e8ecf1;
+      --tech-panel: rgba(255, 255, 255, 0.9);
+      --tech-white: #ffffff;
+      --tech-blue: #0052ff;
+      --tech-dark-blue: #002db3;
+      --tech-black: #171717;
+      --tech-grey: #a0a8b6;
+      --tech-border: rgba(0, 82, 255, 0.25);
+      --p1-color: #0052ff;
+      --p2-color: #ff2a55;
+    }
+
+    body {
+      background-color: var(--tech-bg);
+      color: var(--tech-black);
+      font-family: 'Noto Sans KR', sans-serif;
+      min-height: 100vh;
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+    }
+
+    /* Light Technical Grid Background */
+    .bg-flame {
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background-image: url('images/bg.png');
+      background-size: cover;
+      background-position: center;
+      z-index: 1;
+    }
+
+    /* 🌪️ 속도감 있는 잿가루 파티클 캔버스 */
+    #ash-canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 2;
+      pointer-events: none;
+    }
+
+    /* ❓ 도움말 가이드 버튼 (BGM 위젯 바로 위, 가운데 정렬) */
+    .help-guide-btn {
+      position: absolute;
+      bottom: clamp(115px, 13vh, 135px);
+      left: 50%;
+      transform: translateX(-50%);
+      width: 25px;
+      height: 25px;
+      background-color: #888888;
+      border: 1px solid #000000;
+      border-radius: 50%;
+      color: #ffffff;
+      font-family: 'Chakra Petch', sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      z-index: 999;
+      box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
+      transition: background-color 0.2s ease, transform 0.2s ease;
+    }
+
+    .help-guide-btn:hover {
+      background-color: #171717;
+      transform: translateX(-50%) scale(1.1);
+    }
+
+    /* 🎵 캐릭터 재선택 버튼 위로 이동한 심플 BGM 위젯 */
+    .youtube-bgm-widget {
+      position: absolute;
+      bottom: clamp(70px, 8vh, 90px);
+      left: 50%;
+      transform: translateX(-50%);
+      width: 90px;
+      height: 36px;
+      z-index: 999;
+      background: var(--tech-white);
+      border: 1px solid var(--tech-black);
+      border-top: 3px solid var(--tech-black);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 4px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+      font-family: 'Chakra Petch', sans-serif;
+    }
+
+    .widget-container {
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      width: 100%;
+      height: 100%;
+    }
+
+    .control-btn {
+      background: transparent;
+      border: none;
+      color: var(--tech-black);
+      font-size: 13px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      transition: color 0.2s ease;
+    }
+
+    .control-btn:hover {
+      color: var(--tech-blue);
+    }
+
+    .volume-container {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .volume-dropdown {
+      position: absolute;
+      bottom: 40px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--tech-white);
+      border: 1px solid var(--tech-black);
+      padding: 6px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+      z-index: 1000;
+    }
+
+    .volume-dropdown.hidden {
+      display: none;
+    }
+
+    #volume-slider {
+      width: 60px;
+      height: 3px;
+      accent-color: var(--tech-black);
+      cursor: pointer;
+    }
+
+    #youtube-player {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      opacity: 0;
+      pointer-events: none;
+      left: -9999px;
+    }
+
+    .stage-container {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 10;
+      pointer-events: none;
+    }
+
+    .stage-container * {
+      pointer-events: auto;
+    }
+
+    /* 💡 1P 구역: 좌측 끝 고정 */
+    .p1-side-container {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: clamp(300px, 39vw, 750px);
+      height: 100vh;
+      z-index: 11;
+    }
+
+    /* 💡 2P 구역: 우측 끝 고정 */
+    .p2-side-container {
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: clamp(300px, 39vw, 750px);
+      height: 100vh;
+      z-index: 11;
+    }
+
+    /* 🖼️ 캐릭터 일러스트 박스 (z-index: 15로 최상단 배치) */
+    .portrait-wrapper {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 15;
+      overflow: hidden;
+    }
+
+    .large-portrait {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: top center;
+      opacity: 0;
+      filter: contrast(105%) brightness(102%);
+      transition: opacity 0.2s ease;
+    }
+
+    /* 🏷️ 명패 영역 (z-index: 10으로 가장 뒤에 배치) */
+    .p1-nameplate-wrapper {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: clamp(100px, 11vw, 210px);
+      height: 100vh;
+      z-index: 10;
+      overflow: hidden;
+    }
+
+    .p2-nameplate-wrapper {
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: clamp(100px, 11vw, 210px);
+      height: 100vh;
+      z-index: 10;
+      overflow: hidden;
+    }
+
+    .nameplate-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: top center;
+      opacity: 0;
+      transition: opacity 0.2s ease;
+    }
+
+    /* 🏷️ 1P / 2P 이미지 태그 (z-index: 12로 일러스트(15) 뒤, 명패(10) 앞에 배치) */
+    .player-tag-img {
+      position: absolute;
+      top: 20px;
+      width: clamp(60px, 8vw, 120px);
+      height: auto;
+      z-index: 12; /* 캐릭터 일러스트보다 뒤에 배치 */
+      pointer-events: none;
+    }
+
+    /* 1P 태그는 1P 컨테이너 안쪽(우측)에 배치 */
+    .p1-side-container .player-tag-img {
+      right: 15px;
+    }
+
+    /* 2P 태그는 2P 컨테이너 안쪽(좌측)에 배치 */
+    .p2-side-container .player-tag-img {
+      left: 15px;
+    }
+
+    /* 반응형 중앙 마름모 그리드 */
+    .center-grid-wrapper {
+      position: absolute;
+      top: 52%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 30;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .diamond-grid {
+      display: grid;
+      grid-template-columns: repeat(4, clamp(40px, 4.5vw, 76px));
+      grid-gap: clamp(8px, 0.9vw, 14px);
+      transform: rotate(45deg);
+      padding: 10px;
+      background: transparent;
+      border: none;
+      box-shadow: none;
+      backdrop-filter: none;
+      position: relative;
+    }
+
+    .diamond-card {
+      width: clamp(40px, 4.5vw, 76px);
+      height: clamp(40px, 4.5vw, 76px);
+      background: #f0f3f8;
+      border: 1px solid var(--tech-grey);
+      position: relative;
+      cursor: pointer;
+      overflow: hidden;
+      transition: all 0.15s ease;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    /* 💡 iconImg를 1:1 마름모 그리드에 가득 차도록 세팅 */
+    .diamond-card img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transform: rotate(-45deg) scale(1.3);
+      pointer-events: none;
+      filter: grayscale(30%);
+      transition: filter 0.2s ease;
+    }
+
+    .diamond-card:hover {
+      border-color: var(--tech-black);
+      transform: scale(1.08);
+      z-index: 40;
+      box-shadow: 0 8px 20px rgba(23, 23, 23, 0.25);
+    }
+
+    .diamond-card:hover img {
+      filter: grayscale(0%);
+    }
+
+    .diamond-card.selected-p1 {
+      border: 2px solid var(--p1-color) !important;
+      background: rgba(0, 82, 255, 0.1);
+    }
+
+    .diamond-card.selected-p2 {
+      border: 2px solid var(--p2-color) !important;
+      background: rgba(255, 42, 85, 0.1);
+    }
+
+    .diamond-card.selected-p1.selected-p2 {
+      border: 2px solid var(--tech-black) !important;
+    }
+
+    .p-badge {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) rotate(-45deg);
+      font-family: 'Rajdhani', sans-serif;
+      font-size: clamp(0.6rem, 0.8vw, 0.9rem);
+      font-weight: 700;
+      padding: 2px 6px;
+      color: #fff;
+      pointer-events: none;
+      z-index: 5;
+    }
+
+    .p-badge.p1-badge { background: var(--p1-color); }
+    .p-badge.p2-badge { background: var(--p2-color); }
+
+    footer {
+      position: absolute;
+      bottom: 2vh;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 40;
+      display: flex;
+      justify-content: center;
+    }
+
+    /* 버튼 색상 및 테두리 포인트 #171717 */
+    .reset-btn {
+      font-family: 'Chakra Petch', sans-serif;
+      font-size: clamp(0.75rem, 0.9vw, 1.1rem);
+      font-weight: 700;
+      color: var(--tech-black);
+      background: var(--tech-white);
+      border: 1px solid var(--tech-black);
+      border-left: 4px solid var(--tech-black);
+      padding: 10px 32px;
+      cursor: pointer;
+      letter-spacing: 3px;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 12px rgba(23, 23, 23, 0.08);
+    }
+
+    .reset-btn:hover {
+      background: var(--tech-black);
+      color: #fff;
+    }
+
+    .flash-overlay {
+      position: fixed;
+      top: 0; left: 0; width: 100vw; height: 100vh;
+      background: #fff;
+      z-index: 100;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.1s ease-out;
+    }
+
+    .flash-active {
+      opacity: 0.9;
+    }
+
+    .trans-modal {
+      position: fixed;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%) scale(0.95);
+      background: var(--tech-white);
+      border: 1px solid var(--tech-black);
+      border-top: 4px solid var(--tech-black);
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
+      padding: 30px 50px;
+      text-align: center;
+      z-index: 101;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.2s ease;
+    }
+
+    .trans-modal.show {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translate(-50%, -50%) scale(1);
+    }
+
+    .trans-title {
+      font-family: 'Chakra Petch', sans-serif;
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: var(--tech-black);
+      letter-spacing: 2px;
+      margin-bottom: 8px;
+    }
+
+    .trans-desc {
+      font-size: 1.05rem;
+      color: var(--tech-black);
+    }
+
+    /* 📖 도움말 가이드 팝업 모달 스타일 */
+    .help-modal {
+      position: fixed;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%) scale(0.95);
+      background: var(--tech-white);
+      border: 1px solid var(--tech-black);
+      border-top: 4px solid var(--tech-black);
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
+      padding: 30px;
+      width: 380px;
+      max-width: 90vw;
+      text-align: left;
+      z-index: 110;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.2s ease;
+    }
+
+    .help-modal.show {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translate(-50%, -50%) scale(1);
+    }
+
+    .help-modal h3 {
+      font-family: 'Chakra Petch', sans-serif;
+      font-size: 1.3rem;
+      margin-bottom: 15px;
+      border-bottom: 2px solid var(--tech-black);
+      padding-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .help-close-btn {
+      width: 100%;
+      background: var(--tech-black);
+      color: #fff;
+      border: none;
+      padding: 10px;
+      font-family: 'Chakra Petch', sans-serif;
+      font-weight: 700;
+      cursor: pointer;
+      letter-spacing: 1px;
+    }
+
+    .help-close-btn:hover {
+      background: var(--tech-blue);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ❓ 도움말 가이드 버튼 (BGM 위젯 바로 위, 가운데 정렬) -->
+  <button class="help-guide-btn" onclick="toggleHelpModal()" title="히든 커맨드 가이드">?</button>
+
+  <!-- 🎵 캐릭터 재선택 버튼 위로 이동한 심플 BGM 위젯 -->
+  <div id="youtube-bgm-widget" class="youtube-bgm-widget">
+    <div id="youtube-player"></div>
+    <div class="widget-container">
+      <button id="play-btn" class="control-btn" title="재생/정지">▶</button>
+      <div class="volume-container">
+        <button id="volume-btn" class="control-btn" title="음량 조절">🔊</button>
+        <div id="volume-dropdown" class="volume-dropdown hidden">
+          <input type="range" id="volume-slider" min="0" max="100" value="50">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="bg-flame"></div>
+  <!-- 🌪️ 속도감 있는 대각선 잿가루 파티클 캔버스 -->
+  <canvas id="ash-canvas"></canvas>
+
+  <div class="flash-overlay" id="flash"></div>
+
+  <div class="stage-container">
+    <!-- 1P 구역: 명패(뒤) + 1P태그이미지(중간 안쪽) + 일러스트(앞) -->
+    <div class="p1-side-container">
+      <div class="p1-nameplate-wrapper">
+        <img id="p1-nameplate" class="nameplate-img" src="" alt="">
+      </div>
+      <img class="player-tag-img" src="https://via.placeholder.com/120x60/0052ff/ffffff?text=1P" alt="1P Tag">
+      <div class="portrait-wrapper">
+        <img id="p1-img" class="large-portrait" src="" alt="">
+      </div>
+    </div>
+
+    <!-- Center Diamond Matrix Grid (11 Characters) -->
+    <div class="center-grid-wrapper">
+      <div class="diamond-grid" id="diamond-grid"></div>
+    </div>
+
+    <!-- 2P 구역: 명패(뒤) + 2P태그이미지(중간 안쪽) + 일러스트(앞) -->
+    <div class="p2-side-container">
+      <div class="p2-nameplate-wrapper">
+        <img id="p2-nameplate" class="nameplate-img" src="" alt="">
+      </div>
+      <img class="player-tag-img" src="https://via.placeholder.com/120x60/ff2a55/ffffff?text=2P" alt="2P Tag">
+      <div class="portrait-wrapper">
+        <img id="p2-img" class="large-portrait" src="" alt="">
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer Button (#171717 적용) -->
+  <footer>
+    <button class="reset-btn" onclick="resetSelection()">換將</button>
+  </footer>
+
+  <!-- Secret Transformation Modal Banner -->
+  <div class="trans-modal" id="trans-modal">
+    <div class="trans-title">SHADOW TRANSFORM!</div>
+    <div class="trans-desc" id="trans-msg">히든 각성 완료!</div>
+  </div>
+
+  <!-- 📖 도움말 가이드 팝업 모달 -->
+  <div class="help-modal" id="help-modal">
+    <h3>GUIDE</h3>
+    <p style="font-size: 0.95rem; line-height: 1.6; margin-bottom: 20px; color: var(--tech-black);">
+      일부 캐릭터를 선택한 상태로 "종결패 명" + 엔터 입력 시 히든 캐릭터가 해금됩니다.
+    </p>
+    <button class="help-close-btn" onclick="toggleHelpModal()">닫기</button>
+  </div>
+
+  <!-- YouTube IFrame API 스크립트 로드 -->
+  <script src="https://www.youtube.com/iframe_api"></script>
+
+  <script>
+    /* ==========================================
+       📖 도움말 모달 토글 함수
+    ========================================== */
+    function toggleHelpModal() {
+      const modal = document.getElementById('help-modal');
+      modal.classList.toggle('show');
+    }
+
+    /* ==========================================
+       🌪️ 우하단 -> 좌상단 고속 대각선 잿가루 파티클 엔진
+    ========================================== */
+    const canvas = document.getElementById('ash-canvas');
+    const ctx = canvas.getContext('2d');
+
+    let particles = [];
+    const maxParticles = 60; // 잿가루 파편 수
+
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    class AshParticle {
+      constructor() {
+        this.reset();
+      }
+
+      reset() {
+        this.x = canvas.width + Math.random() * 300;
+        this.y = canvas.height + Math.random() * 200;
+        this.speedX = -(Math.random() * 4 + 3); 
+        this.speedY = -(Math.random() * 3 + 2);
+        this.width = Math.random() * 4 + 1.5;
+        this.height = Math.random() * 2 + 1;
+        this.angle = Math.random() * Math.PI;
+        this.spin = (Math.random() - 0.5) * 0.1;
+        this.opacity = Math.random() * 0.6 + 0.2;
+      }
+
+      update() {
+        this.x += this.speedX;
+        this.y += this.speedY;
+        this.angle += this.spin;
+
+        if (this.x < -50 || this.y < -50) {
+          this.reset();
+        }
+      }
+
+      draw() {
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        ctx.rotate(this.angle);
+        ctx.globalAlpha = this.opacity;
+        ctx.fillStyle = '#171717';
+        ctx.fillRect(-this.width / 2, -this.height / 2, this.width, this.height);
+        ctx.restore();
+      }
+    }
+
+    for (let i = 0; i < maxParticles; i++) {
+      let p = new AshParticle();
+      p.x = Math.random() * canvas.width;
+      p.y = Math.random() * canvas.height;
+      particles.push(p);
+    }
+
+    function animateAsh() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      particles.forEach(p => {
+        p.update();
+        p.draw();
+      });
+      requestAnimationFrame(animateAsh);
+    }
+    animateAsh();
+
+
+    /* ==========================================
+       🎵 유튜브 위젯 BGM 컨트롤러 로직 (ID: PLESn7dBbCvPs)
+    ========================================== */
+    const PLAYLIST_ID = 'PLESn7dBbCvPs';
+    let player;
+
+    window.onYouTubeIframeAPIReady = function() {
+      player = new YT.Player('youtube-player', {
+        height: '0',
+        width: '0',
+        playerVars: {
+          'listType': 'playlist',
+          'list': PLAYLIST_ID,
+          'autoplay': 1,
+          'controls': 0,
+          'disablekb': 1
+        },
+        events: {
+          'onReady': onPlayerReady,
+          'onStateChange': onPlayerStateChange
+        }
+      });
+    };
+
+    function onPlayerReady(event) {
+      if (player && typeof player.setVolume === 'function') {
+        player.setVolume(50);
+      }
+      const slider = document.getElementById('volume-slider');
+      if (slider) slider.value = 50;
+
+      const unlockAudio = () => {
+        if (player && typeof player.getPlayerState === 'function') {
+          if (player.getPlayerState() !== YT.PlayerState.PLAYING) {
+            player.playVideo();
+          }
+        }
+        window.removeEventListener('click', unlockAudio);
+        window.removeEventListener('keydown', unlockAudio);
+      };
+      window.addEventListener('click', unlockAudio);
+      window.addEventListener('keydown', unlockAudio);
+
+      setupUIEvents();
+    }
+
+    function onPlayerStateChange(event) {
+      const playBtn = document.getElementById('play-btn');
+      if (!playBtn) return;
+
+      if (event.data === YT.PlayerState.PLAYING) {
+        playBtn.textContent = '❚❚';
+      } else {
+        playBtn.textContent = '▶';
+      }
+
+      if (event.data === YT.PlayerState.ENDED) {
+        if (player && typeof player.playVideoAt === 'function') {
+          player.playVideoAt(0);
+        }
+      }
+    }
+
+    function setupUIEvents() {
+      const playBtn = document.getElementById('play-btn');
+      const volumeBtn = document.getElementById('volume-btn');
+      const volumeDropdown = document.getElementById('volume-dropdown');
+      const volumeSlider = document.getElementById('volume-slider');
+
+      if (playBtn) {
+        playBtn.addEventListener('click', () => {
+          if (!player || typeof player.getPlayerState !== 'function') return;
+          const state = player.getPlayerState();
+          if (state === YT.PlayerState.PLAYING) {
+            player.pauseVideo();
+          } else {
+            player.playVideo();
+          }
+        });
+      }
+
+      if (volumeBtn && volumeDropdown) {
+        volumeBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          volumeDropdown.classList.toggle('hidden');
+        });
+      }
+
+      if (volumeSlider && volumeBtn) {
+        volumeSlider.addEventListener('input', (e) => {
+          const vol = e.target.value;
+          if (player && typeof player.setVolume === 'function') {
+            player.setVolume(vol);
+          }
+          if (vol == 0) {
+            volumeBtn.textContent = '🔇';
+          } else {
+            volumeBtn.textContent = '🔊';
+          }
+        });
+      }
+
+      window.addEventListener('click', (e) => {
+        if (!e.target.closest('.youtube-bgm-widget') && !e.target.closest('.help-guide-btn') && !e.target.closest('.help-modal')) {
+          if (volumeDropdown) volumeDropdown.classList.add('hidden');
+        }
+      });
+    }
+
+
+    /* ==========================================
+       🔫 오디오 자동 재생 차단 해제 및 SFX 엔진
+    ========================================== */
+    let audioCtxInstance = null;
+
+    function getAudioContext() {
+      if (!audioCtxInstance) {
+        audioCtxInstance = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioCtxInstance.state === 'suspended') {
+        audioCtxInstance.resume();
+      }
+      return audioCtxInstance;
+    }
+
+    ['click', 'pointerdown', 'mouseover', 'keydown'].forEach(evt => {
+      window.addEventListener(evt, () => {
+        getAudioContext();
+      }, { once: false });
+    });
+
+    function playArcadeSound(type) {
+      try {
+        const ctx = getAudioContext();
+        if (!ctx) return;
+        const now = ctx.currentTime;
+
+        if (type === 'hover') {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(320, now);
+          osc.frequency.exponentialRampToValueAtTime(120, now + 0.05);
+
+          gain.gain.setValueAtTime(0.2, now);
+          gain.gain.linearRampToValueAtTime(0.01, now + 0.05);
+
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(now);
+          osc.stop(now + 0.05);
+
+        } else if (type === 'select') {
+          const osc1 = ctx.createOscillator();
+          const osc2 = ctx.createOscillator();
+          const gainNode = ctx.createGain();
+
+          osc1.type = 'sawtooth';
+          osc2.type = 'square';
+
+          osc1.frequency.setValueAtTime(800, now);
+          osc1.frequency.exponentialRampToValueAtTime(150, now + 0.12);
+
+          osc2.frequency.setValueAtTime(220, now);
+          osc2.frequency.exponentialRampToValueAtTime(60, now + 0.12);
+
+          gainNode.gain.setValueAtTime(0.3, now);
+          gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+
+          osc1.connect(gainNode);
+          osc2.connect(gainNode);
+          gainNode.connect(ctx.destination);
+
+          osc1.start(now);
+          osc2.start(now);
+          osc1.stop(now + 0.15);
+          osc2.stop(now + 0.15);
+
+        } else if (type === 'transform') {
+          const osc = ctx.createOscillator();
+          const gainNode = ctx.createGain();
+
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(120, now);
+          osc.frequency.linearRampToValueAtTime(450, now + 0.2);
+          osc.frequency.exponentialRampToValueAtTime(80, now + 0.5);
+
+          gainNode.gain.setValueAtTime(0.4, now);
+          gainNode.gain.linearRampToValueAtTime(0.01, now + 0.5);
+
+          osc.connect(gainNode);
+          gainNode.connect(ctx.destination);
+
+          osc.start(now);
+          osc.stop(now + 0.5);
+        }
+      } catch (e) { console.log(e); }
+    }
+
+
+    /* ==========================================
+       🎮 캐릭터 데이터 (각 캐릭터별 히든 각성 에셋 포함)
+    ========================================== */
+    const characters = [
+      { 
+        id: 'yeon', name: 'yeon', krName: '연', 
+        iconImg: 'images4/yeon_4.png', 
+        img: 'images/yeon_1.png', 
+        nameImg: 'images3/name_0.png',
+        hiddenTitle: '의검',
+        hiddenImg: 'images/yeon_2.png', 
+        hiddenNameImg: 'images/yeon_3.png'
+      },
+      { id: 'haga', name: 'haga', krName: '하가', iconImg: 'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?q=80&w=300&auto=format&fit=crop', img: 'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?q=80&w=800&auto=format&fit=crop', nameImg: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=200&auto=format&fit=crop' },
+      { 
+        id: 'baekryeo', name: 'baekryeo', krName: '백려', 
+        iconImg: 'https://images.unsplash.com/photo-1534447677768-be436bb09401?q=80&w=300&auto=format&fit=crop', 
+        img: 'https://images.unsplash.com/photo-1534447677768-be436bb09401?q=80&w=800&auto=format&fit=crop', 
+        nameImg: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=200&auto=format&fit=crop',
+        hiddenTitle: '설원의요귀',
+        hiddenImg: 'images/baekryeo_hidden.png',
+        hiddenNameImg: 'images/baekryeo_hidden_name.png'
+      },
+      { id: 'yen', name: 'yen', krName: '옌', iconImg: 'https://images.unsplash.com/photo-1563089145-599997674d42?q=80&w=300&auto=format&fit=crop', img: 'https://images.unsplash.com/photo-1563089145-599997674d42?q=80&w=800&auto=format&fit=crop', nameImg: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=200&auto=format&fit=crop' },
+      { 
+        id: 'cheonyou', name: 'cheonyou', krName: '천유', 
+        iconImg: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=300&auto=format&fit=crop', 
+        img: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=800&auto=format&fit=crop', 
+        nameImg: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=200&auto=format&fit=crop',
+        hiddenTitle: '공작명왕',
+        hiddenImg: 'images/cheonyou_hidden.png',
+        hiddenNameImg: 'images/cheonyou_hidden_name.png'
+      },
+      { 
+        id: 'akryang', name: 'akryang', krName: '악량', 
+        iconImg: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=300&auto=format&fit=crop', 
+        img: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=800&auto=format&fit=crop', 
+        nameImg: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=200&auto=format&fit=crop',
+        hiddenTitle: '창귀',
+        hiddenImg: 'images/akryang_hidden.png',
+        hiddenNameImg: 'images/akryang_hidden_name.png'
+      },
+      { id: 'mookyeon', name: 'mookyeon', krName: '묵연', iconImg: 'https://images.unsplash.com/photo-1568602471122-7832951cc4c5?q=80&w=300&auto=format&fit=crop', img: 'https://images.unsplash.com/photo-1568602471122-7832951cc4c5?q=80&w=800&auto=format&fit=crop', nameImg: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=200&auto=format&fit=crop' },
+      { 
+        id: 'seongha', name: 'seongha', krName: '성하', 
+        iconImg: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=300&auto=format&fit=crop', 
+        img: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=800&auto=format&fit=crop', 
+        nameImg: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=200&auto=format&fit=crop',
+        hiddenTitle: '흑영귀',
+        hiddenImg: 'images/seongha_hidden.png',
+        hiddenNameImg: 'images/seongha_hidden_name.png'
+      },
+      { 
+        id: 'yihwa', name: 'yihwa', krName: '이화', 
+        iconImg: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=300&auto=format&fit=crop', 
+        img: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=800&auto=format&fit=crop', 
+        nameImg: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=200&auto=format&fit=crop',
+        hiddenTitle: '고원의지배자',
+        hiddenImg: 'images/yihwa_hidden.png',
+        hiddenNameImg: 'images/yihwa_hidden_name.png'
+      },
+      { 
+        id: 'yiryeong', name: 'yiryeong', krName: '이령', 
+        iconImg: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=300&auto=format&fit=crop', 
+        img: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=800&auto=format&fit=crop', 
+        nameImg: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=200&auto=format&fit=crop',
+        hiddenTitle: '지명수배자',
+        hiddenImg: 'images/yiryeong_hidden.png',
+        hiddenNameImg: 'images/yiryeong_hidden_name.png'
+      },
+      { id: 'bata', name: 'bata', krName: '바타', iconImg: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?q=80&w=300&auto=format&fit=crop', img: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?q=80&w=800&auto=format&fit=crop', nameImg: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=200&auto=format&fit=crop' }
+    ];
+
+    let currentTurn = '1P';
+    let selectedP1 = null;
+    let selectedP2 = null;
+
+    const gridEl = document.getElementById('diamond-grid');
+    const p1Img = document.getElementById('p1-img');
+    const p2Img = document.getElementById('p2-img');
+    const p1Nameplate = document.getElementById('p1-nameplate');
+    const p2Nameplate = document.getElementById('p2-nameplate');
+    const flashEl = document.getElementById('flash');
+    const transModal = document.getElementById('trans-modal');
+    const transMsg = document.getElementById('trans-msg');
+
+    function renderGrid() {
+      gridEl.innerHTML = '';
+      characters.forEach((char) => {
+        const card = document.createElement('div');
+        card.className = 'diamond-card';
+
+        if (selectedP1 && selectedP1.id === char.id) card.classList.add('selected-p1');
+        if (selectedP2 && selectedP2.id === char.id) card.classList.add('selected-p2');
+
+        card.innerHTML = `<img src="${char.iconImg}" alt="${char.name}">`;
+
+        if (selectedP1 && selectedP1.id === char.id) {
+          const badge = document.createElement('div');
+          badge.className = 'p-badge p1-badge';
+          badge.innerText = '1P';
+          card.appendChild(badge);
+        }
+        if (selectedP2 && selectedP2.id === char.id) {
+          const badge = document.createElement('div');
+          badge.className = 'p-badge p2-badge';
+          badge.style.marginTop = (selectedP1 && selectedP1.id === char.id) ? '16px' : '0';
+          badge.innerText = '2P';
+          card.appendChild(badge);
+        }
+
+        card.onmouseenter = () => handleHover(char);
+        card.onclick = () => handleSelect(char);
+
+        gridEl.appendChild(card);
+      });
+    }
+
+    function handleHover(char) {
+      playArcadeSound('hover');
+      if (currentTurn === '1P') {
+        p1Img.src = char.img;
+        p1Img.style.opacity = '1';
+        p1Nameplate.src = char.nameImg;
+        p1Nameplate.style.opacity = '1';
+      } else if (currentTurn === '2P') {
+        p2Img.src = char.img;
+        p2Img.style.opacity = '1';
+        p2Nameplate.src = char.nameImg;
+        p2Nameplate.style.opacity = '1';
+      }
+    }
+
+    function handleSelect(char) {
+      playArcadeSound('select');
+      if (currentTurn === '1P') {
+        selectedP1 = char;
+        p1Img.src = char.img;
+        p1Img.style.opacity = '1';
+        p1Nameplate.src = char.nameImg;
+        p1Nameplate.style.opacity = '1';
+
+        currentTurn = '2P';
+        renderGrid();
+      } else if (currentTurn === '2P') {
+        selectedP2 = char;
+        p2Img.src = char.img;
+        p2Img.style.opacity = '1';
+        p2Nameplate.src = char.nameImg;
+        p2Nameplate.style.opacity = '1';
+
+        currentTurn = 'READY';
+        renderGrid();
+      }
+    }
+
+    function resetSelection() {
+      currentTurn = '1P';
+      selectedP1 = null;
+      selectedP2 = null;
+
+      p1Img.src = '';
+      p1Img.style.opacity = '0';
+      p1Nameplate.src = '';
+      p1Nameplate.style.opacity = '0';
+
+      p2Img.src = '';
+      p2Img.style.opacity = '0';
+      p2Nameplate.src = '';
+      p2Nameplate.style.opacity = '0';
+
+      renderGrid();
+    }
+
+    let inputBuffer = '';
+    const korToEngMap = {
+      '의': 'dml', '검': 'rja', '의검': 'dmlrja',
+      '설': 'tjf', '원': 'dnjs', '의': 'dml', '요': 'dy', '귀': 'rnl', '설원의요귀': 'tjfdnjsdmldyrnl',
+      '공': 'rhd', '작': 'wkr', '명': 'aud', '왕': 'dhkd', '공작명왕': 'rhdwkrauddhkd',
+      '창': 'ckd', '귀': 'rnl', '창귀': 'ckdrnl',
+      '흑': 'gmr', '영': 'dud', '귀': 'rnl', '흑영귀': 'gmrdudrnl',
+      '고': 'rh', '원': 'dnjs', '의': 'dml', '지': 'wl', '배': 'qo', '자': 'wk', '고원의지배자': 'rhdnjsdmlwlqowk',
+      '지': 'wl', '명': 'aud', '수': 'tn', '배': 'qo', '자': 'wk', '지명수배자': 'wlaudtnqowk'
+    };
+
+    window.addEventListener('keyup', (e) => {
+      getAudioContext();
+      if (e.key === 'Enter') {
+        checkCommand();
+        inputBuffer = '';
+        return;
+      }
+
+      if (e.key === 'Backspace') {
+        inputBuffer = inputBuffer.slice(0, -1);
+        return;
+      }
+
+      if (e.key.length === 1) {
+        const mappedKey = korToEngMap[e.key] || e.key.toLowerCase();
+        inputBuffer += mappedKey;
+      }
+    });
+
+    function checkCommand() {
+      const cleanBuffer = inputBuffer.trim().toLowerCase();
+
+      const hiddenCommands = [
+        { id: 'yeon', title: '의검', triggers: ['dmlrja', '의검'] },
+        { id: 'baekryeo', title: '설원의요귀', triggers: ['tjfdnjsdmldyrnl', '설원의요귀'] },
+        { id: 'cheonyou', title: '공작명왕', triggers: ['rhdwkrauddhkd', '공작명왕'] },
+        { id: 'akryang', title: '창귀', triggers: ['ckdrnl', '창귀'] },
+        { id: 'seongha', title: '흑영귀', triggers: ['gmrdudrnl', '흑영귀'] },
+        { id: 'yihwa', title: '고원의지배자', triggers: ['rhdnjsdmlwlqowk', '고원의지배자'] },
+        { id: 'yiryeong', title: '지명수배자', triggers: ['wlaudtnqowk', '지명수배자'] }
+      ];
+
+      let matchedConfig = null;
+      for (const cmd of hiddenCommands) {
+        if (cmd.triggers.some(trig => cleanBuffer.includes(trig))) {
+          matchedConfig = cmd;
+          break;
+        }
+      }
+
+      if (!matchedConfig) return;
+
+      let transformedWho = [];
+
+      if (selectedP1 && selectedP1.id === matchedConfig.id && selectedP1.hiddenImg) {
+        p1Img.src = selectedP1.hiddenImg;
+        if (selectedP1.hiddenNameImg) p1Nameplate.src = selectedP1.hiddenNameImg;
+        transformedWho.push('1P');
+      }
+
+      if (selectedP2 && selectedP2.id === matchedConfig.id && selectedP2.hiddenImg) {
+        p2Img.src = selectedP2.hiddenImg;
+        if (selectedP2.hiddenNameImg) p2Nameplate.src = selectedP2.hiddenNameImg;
+        transformedWho.push('2P');
+      }
+
+      if (transformedWho.length > 0) {
+        playArcadeSound('transform');
+        flashEl.classList.add('flash-active');
+        setTimeout(() => flashEl.classList.remove('flash-active'), 200);
+
+        transMsg.innerText = `${transformedWho.join(' & ')}  [★ ${matchedConfig.title}] 해금`;
+        transModal.classList.add('show');
+
+        setTimeout(() => {
+          transModal.classList.remove('show');
+        }, 2200);
+
+        renderGrid();
+      }
+    }
+
+    renderGrid();
+  </script>
+</body>
+</html>
