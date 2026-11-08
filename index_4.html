@@ -796,70 +796,27 @@
       }, { once: false });
     });
 
+/* ==========================================
+       🎵 오디오 파일 경로를 불러와 재생하는 SFX 엔진
+    ========================================== */
     function playArcadeSound(type) {
       try {
-        const ctx = getAudioContext();
-        if (!ctx) return;
-        const now = ctx.currentTime;
+        let audioPath = '';
 
         if (type === 'hover') {
-          const osc = ctx.createOscillator();
-          const gain = ctx.createGain();
-          osc.type = 'triangle';
-          osc.frequency.setValueAtTime(320, now);
-          osc.frequency.exponentialRampToValueAtTime(120, now + 0.05);
-
-          gain.gain.setValueAtTime(0.2, now);
-          gain.gain.linearRampToValueAtTime(0.01, now + 0.05);
-
-          osc.connect(gain);
-          gain.connect(ctx.destination);
-          osc.start(now);
-          osc.stop(now + 0.05);
-
+          audioPath = '';    // 마우스 오버 효과음 경로
         } else if (type === 'select') {
-          const osc1 = ctx.createOscillator();
-          const osc2 = ctx.createOscillator();
-          const gainNode = ctx.createGain();
-
-          osc1.type = 'sawtooth';
-          osc2.type = 'square';
-
-          osc1.frequency.setValueAtTime(800, now);
-          osc1.frequency.exponentialRampToValueAtTime(150, now + 0.12);
-
-          osc2.frequency.setValueAtTime(220, now);
-          osc2.frequency.exponentialRampToValueAtTime(60, now + 0.12);
-
-          gainNode.gain.setValueAtTime(0.3, now);
-          gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
-
-          osc1.connect(gainNode);
-          osc2.connect(gainNode);
-          gainNode.connect(ctx.destination);
-
-          osc1.start(now);
-          osc2.start(now);
-          osc1.stop(now + 0.15);
-          osc2.stop(now + 0.15);
-
+          audioPath = 'se/se_3.mp3';   // 캐릭터 선택 효과음 경로
         } else if (type === 'transform') {
-          const osc = ctx.createOscillator();
-          const gainNode = ctx.createGain();
+          audioPath = 'se/se_5.mp3'; // 히든 변신 효과음 경로
+        }
 
-          osc.type = 'sawtooth';
-          osc.frequency.setValueAtTime(120, now);
-          osc.frequency.linearRampToValueAtTime(450, now + 0.2);
-          osc.frequency.exponentialRampToValueAtTime(80, now + 0.5);
-
-          gainNode.gain.setValueAtTime(0.4, now);
-          gainNode.gain.linearRampToValueAtTime(0.01, now + 0.5);
-
-          osc.connect(gainNode);
-          gainNode.connect(ctx.destination);
-
-          osc.start(now);
-          osc.stop(now + 0.5);
+        if (audioPath) {
+          const sfx = new Audio(audioPath);
+          sfx.volume = 0.5; // 볼륨 조절 (0.0 ~ 1.0)
+          sfx.play().catch(e => {
+            console.log("Audio play blocked or failed:", e);
+          });
         }
       } catch (e) { console.log(e); }
     }
